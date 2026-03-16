@@ -74,7 +74,7 @@ export class LcmSettingsPanel {
   render(width: number): string[] {
     if (this.cachedLines && this.cachedWidth === width) return this.cachedLines;
 
-    const w = Math.max(40, Math.min(width - 2, 68));
+    const w = Math.max(20, Math.min(width - 2, 68));
     const t = (s: string) => truncateToWidth(s, w);
 
     const lines: string[] = [];

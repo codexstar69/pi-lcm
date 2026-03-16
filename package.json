@@ -1,6 +1,6 @@
 {
   "name": "pi-lcm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lossless Context Management for Pi — DAG-based summarization with full history recovery",
   "type": "module",
   "license": "MIT",

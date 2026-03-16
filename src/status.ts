@@ -1,5 +1,6 @@
 /**
  * Footer status widget showing LCM stats.
+ * Keep it SHORT — Pi crashes if status text exceeds terminal width.
  */
 
 import type { LcmStore } from "./db/store.js";
@@ -14,11 +15,11 @@ export function updateStatus(
     return;
   }
 
-  const stats = store.getStats(conversationId);
-  const sizeMb = (stats.dbSizeBytes / 1024 / 1024).toFixed(1);
-
-  ctx.ui.setStatus(
-    "lcm",
-    `LCM: ${stats.messages} msgs | ${stats.summaries} summaries (D${stats.maxDepth}) | ${sizeMb} MB`,
-  );
+  try {
+    const stats = store.getStats(conversationId);
+    // Keep under 20 chars to be safe on narrow terminals
+    ctx.ui.setStatus("lcm", `${stats.messages}m ${stats.summaries}s`);
+  } catch {
+    ctx.ui.setStatus("lcm", "");
+  }
 }
