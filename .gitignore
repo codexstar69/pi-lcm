@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.db
+*.db-shm
+*.db-wal
+.env*
+.DS_Store
+*.log
+coverage/
+.nyc_output/
+*.tmp

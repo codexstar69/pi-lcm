@@ -1,0 +1,39 @@
+# pi-lcm
+
+> Lossless context management for Pi. Replaces lossy compaction with a DAG-based summarization system backed by SQLite.
+
+## What It Does
+
+Pi's default compaction discards old messages permanently. pi-lcm stores every message in SQLite and creates hierarchical summaries (a DAG) when compaction triggers. The agent can search and drill into any compressed node to recover original detail.
+
+## Key Capabilities
+
+- Permanent message persistence in SQLite with FTS5 search
+- Hierarchical DAG summarization (leaf D0 → condensed D1 → D2+)
+- Three agent tools: lcm_grep (search), lcm_describe (overview), lcm_expand (drill-down)
+- Parallel compaction with per-conversation mutex
+- Prompt-cache-safe system prompt injection (static const)
+- Interactive TUI settings panel (/lcm-settings)
+- Cross-session history within the same project
+
+## Usage
+
+```bash
+pi install npm:pi-lcm
+```
+
+Works automatically after install. Agent tools appear when history has been compacted.
+
+## File Index
+
+- [README.md](README.md): Full documentation, configuration, commands
+- [CONTRIBUTING.md](CONTRIBUTING.md): Development setup
+- [CHANGELOG.md](CHANGELOG.md): Version history
+- [SECURITY.md](SECURITY.md): Vulnerability reporting
+- [PLAN.md](PLAN.md): Architecture design and audit history
+- [index.ts](index.ts): Extension entry point
+- [src/db/](src/db/): SQLite connection, schema, data access
+- [src/compaction/](src/compaction/): DAG compaction engine, prompts, assembler
+- [src/tools/](src/tools/): Agent tools (grep, describe, expand)
+- [src/settings.ts](src/settings.ts): Settings persistence
+- [src/settings-panel.ts](src/settings-panel.ts): TUI overlay

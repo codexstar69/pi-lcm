@@ -1,0 +1,65 @@
+{
+  "name": "pi-lcm",
+  "version": "0.1.0",
+  "description": "Lossless Context Management for Pi — DAG-based summarization with full history recovery",
+  "type": "module",
+  "license": "MIT",
+  "author": "codexstar69 <engazedigital@gmail.com>",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-extension",
+    "context-management",
+    "llm",
+    "summarization",
+    "conversation-memory",
+    "dag",
+    "sqlite",
+    "fts5",
+    "compaction",
+    "lossless",
+    "ai-agent",
+    "coding-assistant",
+    "developer-tools"
+  ],
+  "files": [
+    "index.ts",
+    "src/**/*.ts",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codexstar69/pi-lcm.git"
+  },
+  "homepage": "https://github.com/codexstar69/pi-lcm#readme",
+  "bugs": {
+    "url": "https://github.com/codexstar69/pi-lcm/issues"
+  },
+  "pi": {
+    "extensions": ["./index.ts"]
+  },
+  "scripts": {
+    "test": "vitest run --dir test",
+    "test:watch": "vitest --dir test",
+    "prepublishOnly": "bun run test"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.9.1"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-coding-agent": "*",
+    "@sinclair/typebox": "*"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "vitest": "^3.0.0",
+    "typescript": "^5.7.0"
+  },
+  "trustedDependencies": [
+    "koffi",
+    "protobufjs"
+  ]
+}
