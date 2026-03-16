@@ -142,16 +142,22 @@ export default function (pi: ExtensionAPI) {
 
     const panel = new LcmSettingsPanel(panelDeps);
 
+    // Pi's ctx.ui.custom API: (tui, theme, keybindings, done) => Component
+    // done() closes the overlay. Wire panel.onClose to done().
     await ctx.ui.custom(
-      (width: number) => {
-        return {
-          render: () => panel.render(width),
-          handleInput: (data: string) => panel.handleInput(data),
-          invalidate: () => panel.invalidate(),
-          onClose: panel.onClose,
-        };
+      (_tui: any, _theme: any, _kb: any, done: () => void) => {
+        panel.onClose = () => done();
+        return panel;
       },
-      { overlay: true },
+      {
+        overlay: true,
+        overlayOptions: {
+          width: "60%",
+          minWidth: 36,
+          maxHeight: "70%",
+          anchor: "center",
+        },
+      },
     );
   }
 
