@@ -43,7 +43,7 @@
   "scripts": {
     "test": "vitest run --dir test",
     "test:watch": "vitest --dir test",
-    "prepublishOnly": "bun run test"
+    "prepublishOnly": "vitest run --dir test"
   },
   "dependencies": {
     "better-sqlite3": "^11.9.1"
