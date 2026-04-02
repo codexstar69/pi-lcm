@@ -1,7 +1,9 @@
 /**
  * pi-lcm: Lossless Context Management extension for Pi.
  *
- * Fix 6: session_switch + session_fork handlers.
+ * Session lifecycle: per-event detection with no global flags.
+ *   - session_start: checks event.reason if present (new Pi), otherwise init-only (old Pi).
+ *   - session_switch / session_fork: legacy-only events (never fire on new Pi).
  * Fix 7: closeDb() in session_start catch block.
  * Fix H1: message_end has no entryId — always pass null.
  */
@@ -163,18 +165,21 @@ export default function (pi: ExtensionAPI) {
 
   // ── Session lifecycle ───────────────────────────────────────────
 
-  pi.on("session_start", async (_event: any, ctx: any) => {
+  pi.on("session_start", async (event: any, ctx: any) => {
     try {
+      // New Pi API: event.reason tells us why this session started
+      if (typeof event.reason === "string" && event.reason !== "startup") {
+        resetState();
+      }
       initializeSession(ctx);
     } catch (e: any) {
       console.error("[LCM] Failed to initialize:", e.message);
       ctx.ui.notify(`LCM init failed: ${e.message}`, "warning");
-      // Fix 7: Clean up connection on failure
       resetState();
     }
   });
 
-  // Fix 6: Handle session switch (/new, /resume)
+  // Legacy handlers: only fire on old Pi (removed in new Pi, never called)
   pi.on("session_switch", async (_event: any, ctx: any) => {
     resetState();
     try {
@@ -185,7 +190,6 @@ export default function (pi: ExtensionAPI) {
     }
   });
 
-  // Fix 6: Handle session fork
   pi.on("session_fork", async (_event: any, ctx: any) => {
     resetState();
     try {
@@ -280,7 +284,24 @@ async function callCompactionModel(ctx: any, config: LcmConfig, prompt: string, 
       ?? ctx.modelRegistry.getAll().find((m: any) => m.provider === cfg.provider && m.id === cfg.id);
     if (!model) continue;
 
-    const apiKey = await ctx.modelRegistry.getApiKey(model);
+    let apiKey: string | undefined;
+    let headers: Record<string, string> | undefined;
+    if (typeof ctx.modelRegistry.getApiKeyAndHeaders === "function") {
+      const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
+      if (!auth || typeof auth.ok !== "boolean") {
+        console.error("[LCM] Unexpected auth response shape");
+        continue;
+      }
+      if (!auth.ok) continue;
+      if (typeof auth.apiKey !== "string" || auth.apiKey.length === 0) {
+        console.error("[LCM] Auth succeeded but apiKey is missing");
+        continue;
+      }
+      apiKey = auth.apiKey;
+      headers = auth.headers != null && typeof auth.headers === "object" ? auth.headers : undefined;
+    } else {
+      apiKey = await ctx.modelRegistry.getApiKey(model);
+    }
     if (!apiKey) continue;
 
     try {
@@ -290,7 +311,7 @@ async function callCompactionModel(ctx: any, config: LcmConfig, prompt: string, 
           systemPrompt: "You are a precise conversation summarizer. Output only the summary, nothing else.",
           messages: [{ role: "user" as const, content: [{ type: "text" as const, text: prompt }], timestamp: Date.now() }],
         },
-        { apiKey, signal },
+        { apiKey, headers, signal },
       );
 
       const text = response.content.filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n").trim();
@@ -303,15 +324,31 @@ async function callCompactionModel(ctx: any, config: LcmConfig, prompt: string, 
 
   // Fall back to session model
   if (ctx.model) {
-    const apiKey = await ctx.modelRegistry.getApiKey(ctx.model);
-    if (apiKey) {
+    let fallbackApiKey: string | undefined;
+    let fallbackHeaders: Record<string, string> | undefined;
+    if (typeof ctx.modelRegistry.getApiKeyAndHeaders === "function") {
+      const auth = await ctx.modelRegistry.getApiKeyAndHeaders(ctx.model);
+      if (!auth || typeof auth.ok !== "boolean") {
+        console.error("[LCM] Unexpected auth response shape for fallback model");
+      } else if (auth.ok) {
+        if (typeof auth.apiKey !== "string" || auth.apiKey.length === 0) {
+          console.error("[LCM] Fallback auth succeeded but apiKey is missing");
+        } else {
+          fallbackApiKey = auth.apiKey;
+          fallbackHeaders = auth.headers != null && typeof auth.headers === "object" ? auth.headers : undefined;
+        }
+      }
+    } else {
+      fallbackApiKey = await ctx.modelRegistry.getApiKey(ctx.model);
+    }
+    if (fallbackApiKey) {
       const response = await complete(
         ctx.model,
         {
           systemPrompt: "You are a precise conversation summarizer. Output only the summary, nothing else.",
           messages: [{ role: "user" as const, content: [{ type: "text" as const, text: prompt }], timestamp: Date.now() }],
         },
-        { apiKey, signal },
+        { apiKey: fallbackApiKey, headers: fallbackHeaders, signal },
       );
       const text = response.content.filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n").trim();
       if (text.length > 0) return text;
