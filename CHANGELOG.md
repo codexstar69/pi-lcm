@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.3] — 2026-04-03
+
+### Fixed
+- **Pi API compatibility: session events** — `session_start` now uses per-event
+  `event.reason` detection for new Pi API (reason-based routing for `startup`,
+  `reload`, `new`, `resume`, `fork`). Legacy `session_switch`/`session_fork`
+  handlers preserved for backward compatibility with older Pi versions.
+- **Pi API compatibility: auth migration** — `ModelRegistry.getApiKey(model)`
+  replaced with `getApiKeyAndHeaders(model)` via runtime `typeof` guard, with
+  automatic fallback to `getApiKey()` for older Pi versions. Both `apiKey` and
+  `headers` are now forwarded to all `complete()` calls.
+- **Auth response shape validation** — all auth call sites now validate the full
+  success payload (`auth.ok` boolean, `apiKey` non-empty string, `headers` object
+  sanitization). Malformed responses abort gracefully without making LLM calls.
+- **Security** — no raw API keys or auth headers are logged in any error path.
+
 ## [0.1.0] — 2026-03-16
 
 ### Added
